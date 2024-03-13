@@ -1,0 +1,12 @@
+[Unit]
+Description=An idle inhibition daemon that forwards inhibitor locks to logind
+
+[Service]
+Type=simple
+ExecStart=@SDIB_BIN@
+Restart=on-failure
+Slice=session.slice
+StandardError=journal
+
+[Install]
+WantedBy=default.target

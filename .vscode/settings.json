@@ -1,0 +1,9 @@
+{
+  "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+  "C_Cpp.codeAnalysis.clangTidy.checks.enabled": ["*"],
+  "C_Cpp.codeAnalysis.clangTidy.config": "CompileFlags:\n  Add: [-D__CLANGD__]",
+  "files.associations": {
+    "*.h": "c",
+    "*.c": "c"
+  }
+}
