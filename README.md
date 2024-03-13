@@ -20,6 +20,10 @@ Note: a logind-aware idle manager
 (such as [swayidle](https://github.com/swaywm/swayidle))
 is required to honor the idle inhibitors.
 
+## Install from package
+
+Available for Arch Linux on the [AUR](https://aur.archlinux.org/packages/sd-inhibit-bridge).
+
 ## Install from source
 
 ```sh
