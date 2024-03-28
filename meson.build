@@ -25,7 +25,11 @@ add_project_arguments([
   '-include', meson.source_root() / 'c2xcompat.h',
 ], language: 'c')
 
-DEP_SYSTEMD = dependency('systemd', required: false)
+DEP_SYSTEMD = dependency(
+  'systemd',
+  include_type: 'system',
+  required: false,
+)
 
 if get_option('sd-bus-provider') == 'auto'
   DEP_LIBSYSTEMD = dependency(
@@ -33,7 +37,11 @@ if get_option('sd-bus-provider') == 'auto'
     required: true,
   )
 else
-  DEP_LIBSYSTEMD = dependency(get_option('sd-bus-provider'), required: true)
+  DEP_LIBSYSTEMD = dependency(
+    get_option('sd-bus-provider'),
+    include_type: 'system',
+    required: true,
+  )
 endif
 
 subdir('src')
