@@ -44,4 +44,26 @@ else
   )
 endif
 
+docdir = get_option('docdir')
+if docdir == ''
+  docdir = join_paths(
+    get_option('prefix'),
+    get_option('datadir'),
+    'doc',
+    meson.project_name(),
+  )
+endif
+install_data('README.md', install_dir: docdir)
+
+licensedir = get_option('licensedir')
+if licensedir == ''
+  licensedir = join_paths(
+    get_option('prefix'),
+    get_option('datadir'),
+    'licenses',
+    meson.project_name(),
+  )
+endif
+install_data('LICENSE', install_dir: licensedir)
+
 subdir('src')

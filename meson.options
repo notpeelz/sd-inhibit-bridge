@@ -1,4 +1,9 @@
 option(
+  'docdir',
+  type: 'string',
+  description: 'documentation directory',
+)
+option(
   'sd-bus-provider',
   type: 'combo',
   choices: [
