@@ -34,6 +34,7 @@ DEP_SYSTEMD = dependency(
 if get_option('sd-bus-provider') == 'auto'
   DEP_LIBSYSTEMD = dependency(
     ['libsystemd', 'libelogind'],
+    include_type: 'system',
     required: true,
   )
 else
