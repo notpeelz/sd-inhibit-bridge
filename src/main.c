@@ -392,32 +392,31 @@ static int setup_screensaver_service(sd_bus* bus, bus_context_t* ctx) {
   );
   if (r < 0) goto fail;
 
+  static char const* service_name = "org.freedesktop.ScreenSaver";
+
   r = sd_bus_add_object_vtable(
     bus,
     nullptr,
     "/org/freedesktop/ScreenSaver",
-    "org.freedesktop.ScreenSaver",
+    service_name,
     screensaver_vtable,
     ctx
   );
   if (r < 0) goto fail;
 
-  r = sd_bus_request_name(
-    bus,
-    "org.freedesktop.ScreenSaver",
-    0
-  );
+  r = sd_bus_request_name(bus, service_name, 0);
   if (r < 0) {
     fprintf(
       stderr,
       SD_ERR "failed to acquire name %s: %s\n",
-      SD_ERR "org.freedesktop.ScreenSaver",
+      service_name,
       strerror(-r)
     );
     goto fail;
   }
 
   return 0;
+
 fail:
   return -1;
 }
