@@ -196,24 +196,23 @@ static int setup_signal_handlers(sd_event* event) {
     || sigaddset(&ss, SIGTERM) < 0
     || sigaddset(&ss, SIGINT) < 0
   ) {
-    return -1;
+    goto fail;
   }
 
   if (sigprocmask(SIG_BLOCK, &ss, nullptr) < 0) {
-    return -1;
+    goto fail;
   }
 
   r = sd_event_add_signal(event, nullptr, SIGTERM, nullptr, nullptr);
-  if (r < 0) {
-    return -1;
-  }
+  if (r < 0) goto fail;
 
   r = sd_event_add_signal(event, nullptr, SIGINT, nullptr, nullptr);
-  if (r < 0) {
-    return -1;
-  }
+  if (r < 0) goto fail;
 
   return 0;
+
+fail:
+  return 1;
 }
 
 static int method_inhibit(
@@ -506,7 +505,7 @@ int main(int argc, char** argv) {
   if (r < 0) goto ret;
 
   r = setup_signal_handlers(event);
-  if (r < 0) goto ret;
+  if (r != 0) goto ret;
 
   r = sd_bus_open_user(&user_bus);
   if (r < 0) {
