@@ -126,7 +126,7 @@ static bus_context_t* bus_context_create(sd_bus* system_bus) {
 
 fail:
   free(ctx);
-  free(ht);
+  htable_destroyp(&ht);
   sd_bus_unrefp(&system_bus);
   return nullptr;
 }
