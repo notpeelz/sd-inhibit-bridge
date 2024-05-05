@@ -485,10 +485,10 @@ int main(int argc, char** argv) {
   int ret = EXIT_FAILURE;
   int r;
 
-  _sdib_cleanup_(sd_bus_unrefp)
+  _sdib_cleanup_(sd_bus_flush_close_unrefp)
   sd_bus* user_bus = nullptr;
 
-  _sdib_cleanup_(sd_bus_unrefp)
+  _sdib_cleanup_(sd_bus_flush_close_unrefp)
   sd_bus* system_bus = nullptr;
 
   _sdib_cleanup_(bus_context_destroyp)
