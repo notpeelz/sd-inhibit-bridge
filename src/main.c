@@ -18,6 +18,9 @@ typedef struct peer {
 } peer_t;
 
 static peer_t* peer_create(char const* name, sd_bus* system_bus) {
+  assert(name != nullptr);
+  assert(system_bus != nullptr);
+
   peer_t* peer = nullptr;
   inhibitman_t* im = nullptr;
   char const* peer_name = nullptr;
@@ -44,17 +47,16 @@ fail:
 }
 
 static void peer_destroy(peer_t* peer) {
-  if (peer != nullptr) {
-    fprintf(
-      stderr,
-      SD_DEBUG "destroying peer\n"
-      SD_DEBUG "  name=%s\n",
-      peer->name
-    );
-    inhibitman_destroyp(&peer->im);
-    free((void*)peer->name);
-    free(peer);
-  }
+  if (peer == nullptr) return;
+  fprintf(
+    stderr,
+    SD_DEBUG "destroying peer\n"
+    SD_DEBUG "  name=%s\n",
+    peer->name
+  );
+  inhibitman_destroyp(&peer->im);
+  free((void*)peer->name);
+  free(peer);
 }
 SDIB_DEFINE_POINTER_CLEANUP_FUNC(peer_t, peer_destroy);
 
