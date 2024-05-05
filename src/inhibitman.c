@@ -206,7 +206,12 @@ int inhibitman_add(
     err = -r;
     goto fail;
   }
+
   fd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
+  if (fd < 0) {
+    err = errno;
+    goto fail;
+  }
 
   size_t idx;
   r = inhibitor_arr_add(im->inhibitors, fd, who, why, &idx);
