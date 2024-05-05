@@ -23,7 +23,7 @@ static peer_t* peer_create(char const* name, sd_bus* system_bus) {
 
   peer_t* peer = nullptr;
   inhibitman_t* im = nullptr;
-  char const* peer_name = nullptr;
+  char* peer_name = nullptr;
 
   peer = calloc(1, sizeof(*peer));
   if (peer == nullptr) goto fail;
@@ -31,7 +31,7 @@ static peer_t* peer_create(char const* name, sd_bus* system_bus) {
   im = inhibitman_create(system_bus);
   if (im == nullptr) goto fail;
 
-  peer_name = (char const*)strdup(name);
+  peer_name = strdup(name);
   if (peer_name == nullptr) goto fail;
 
   peer->name = peer_name;
@@ -41,7 +41,7 @@ static peer_t* peer_create(char const* name, sd_bus* system_bus) {
 
 fail:
   inhibitman_destroyp(&im);
-  free((void*)peer_name);
+  free(peer_name);
   free(peer);
   return nullptr;
 }
