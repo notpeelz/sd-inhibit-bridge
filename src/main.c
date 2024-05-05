@@ -65,7 +65,7 @@ typedef struct bus_context {
   sd_bus* system_bus;
 } bus_context_t;
 
-static uint64_t peer_htable_hash(void const* in) {
+static uint64_t peers_htable_hash(void const* in) {
   uint64_t hash = 0xcbf29ce484222325u;
   for (char const* k = in; *k != '\0'; k++) {
     hash ^= *k;
@@ -74,33 +74,33 @@ static uint64_t peer_htable_hash(void const* in) {
   return hash;
 }
 
-static bool peer_htable_keq(void const* a, void const* b) {
+static bool peers_htable_keq(void const* a, void const* b) {
   return strcmp(a, b) == 0;
 }
 
-static void* inhibitor_htable_kcopy(void* in) {
+static void* peers_htable_kcopy(void* in) {
   auto k = (char const*)in;
   return strdup(k);
 }
 
-static void inhibitor_htable_kfree(void* in) {
+static void peers_htable_kfree(void* in) {
   free(in);
 }
 
-static void* inhibitor_htable_vcopy(void* in) {
+static void* peers_htable_vcopy(void* in) {
   return in;
 }
 
-static void inhibitor_htable_vfree(void* in) {
+static void peers_htable_vfree(void* in) {
   auto peer = (peer_t*)in;
   peer_destroyp(&peer);
 }
 
-static htable_callbacks_t inhibitor_htable_callbacks = {
-  .kcopy = inhibitor_htable_kcopy,
-  .kfree = inhibitor_htable_kfree,
-  .vcopy = inhibitor_htable_vcopy,
-  .vfree = inhibitor_htable_vfree,
+static htable_callbacks_t peers_htable_callbacks = {
+  .kcopy = peers_htable_kcopy,
+  .kfree = peers_htable_kfree,
+  .vcopy = peers_htable_vcopy,
+  .vfree = peers_htable_vfree,
 };
 
 static bus_context_t* bus_context_create(sd_bus* system_bus) {
@@ -114,9 +114,9 @@ static bus_context_t* bus_context_create(sd_bus* system_bus) {
   if (ctx == nullptr) goto fail;
 
   ht = htable_create(
-    peer_htable_hash,
-    peer_htable_keq,
-    &inhibitor_htable_callbacks
+    peers_htable_hash,
+    peers_htable_keq,
+    &peers_htable_callbacks
   );
   if (ht == nullptr) goto fail;
 
