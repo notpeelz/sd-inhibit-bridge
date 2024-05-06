@@ -17,7 +17,9 @@ executable(
   dependencies: [
     DEP_LIBSYSTEMD,
   ],
-  include_directories: include_directories('.'),
+  include_directories: [
+    include_directories('.'),
+  ],
   link_args: [
     '-Wl,--version-script', meson.current_source_dir() / 'version.map',
   ],
