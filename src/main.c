@@ -333,7 +333,7 @@ invalid:
   return sd_bus_reply_method_errnof(m, EINVAL, "invalid cookie");
 }
 
-static sd_bus_vtable const screensaver_vtable[] = {
+static sd_bus_vtable const bus_vtable_screensaver[] = {
   SD_BUS_VTABLE_START(0),
   SD_BUS_METHOD_WITH_ARGS(
     "Inhibit",
@@ -355,7 +355,7 @@ static sd_bus_vtable const screensaver_vtable[] = {
   SD_BUS_VTABLE_END,
 };
 
-static int on_name_owner_changed(
+static int bus_on_name_owner_changed(
   sd_bus_message* m,
   void* userdata,
   sd_bus_error* ret_error
@@ -390,53 +390,6 @@ static int on_name_owner_changed(
   return 0;
 }
 
-static int setup_screensaver_service(sd_bus* bus, bus_context_t* ctx) {
-  assert(bus != nullptr);
-  assert(ctx != nullptr);
-
-  int r;
-
-  r = sd_bus_match_signal(
-    bus,
-    nullptr,
-    "org.freedesktop.DBus",
-    "/org/freedesktop/DBus",
-    "org.freedesktop.DBus",
-    "NameOwnerChanged",
-    on_name_owner_changed,
-    ctx
-  );
-  if (r < 0) goto fail;
-
-  static char const* service_name = "org.freedesktop.ScreenSaver";
-
-  r = sd_bus_add_object_vtable(
-    bus,
-    nullptr,
-    "/org/freedesktop/ScreenSaver",
-    service_name,
-    screensaver_vtable,
-    ctx
-  );
-  if (r < 0) goto fail;
-
-  r = sd_bus_request_name(bus, service_name, 0);
-  if (r < 0) {
-    fprintf(
-      stderr,
-      SD_ERR "failed to acquire name %s: %s\n",
-      service_name,
-      strerror(-r)
-    );
-    goto fail;
-  }
-
-  return 0;
-
-fail:
-  return -1;
-}
-
 static struct option long_options[] = {
   {"help", no_argument, nullptr, 'h'},
   {"version", no_argument, nullptr, 'V'},
@@ -452,53 +405,10 @@ static char usage[] = {
   "Print version\n"
 };
 
-static int parse_options(int argc, char* argv[], int* exitcode) {
-  assert(argv != nullptr);
-  assert(exitcode != nullptr);
-
-  optind = 1;
-  while (true) {
-    int c = getopt_long(argc, argv, "hVv", long_options, nullptr);
-    if (c < 0) {
-      break;
-    }
-
-    switch (c) {
-      case 'V': {
-        fprintf(stderr, "sd-inhibit-bridge version %s\n", SDIB_VERSION);
-        goto exit_success;
-      }
-      case 'h': {
-        fprintf(stderr, "%s", usage);
-        goto exit_success;
-      }
-      default: {
-        goto exit_fail;
-      }
-    }
-  }
-
-  if (argc > optind) {
-    goto exit_fail;
-  }
-
-  return 0;
-
-exit_success:
-  *exitcode = EXIT_SUCCESS;
-  return -1;
-
-exit_fail:
-  fprintf(stderr, "%s", usage);
-  *exitcode = EXIT_FAILURE;
-  return -1;
-}
-
 int main(int argc, char** argv) {
   (void)argc;
   (void)argv;
 
-  int ret = EXIT_FAILURE;
   int r;
 
   _sdib_cleanup_(sd_bus_flush_close_unrefp)
@@ -513,14 +423,39 @@ int main(int argc, char** argv) {
   _sdib_cleanup_(sd_event_unrefp)
   sd_event* event = nullptr;
 
-  r = parse_options(argc, argv, &ret);
-  if (r < 0) goto ret;
+  optind = 1;
+  while (true) {
+    int c = getopt_long(argc, argv, "hVv", long_options, nullptr);
+    if (c < 0) {
+      break;
+    }
+
+    switch (c) {
+      case 'V': {
+        fprintf(stderr, "sd-inhibit-bridge version %s\n", SDIB_VERSION);
+        goto exit;
+      }
+      case 'h': {
+        fprintf(stderr, "%s", usage);
+        goto exit;
+      }
+      default: {
+        fprintf(stderr, "%s", usage);
+        goto fail;
+      }
+    }
+  }
+
+  if (optind < argc) {
+    fprintf(stderr, "%s", usage);
+    goto fail;
+  }
 
   r = sd_event_default(&event);
-  if (r < 0) goto ret;
+  if (r < 0) goto fail;
 
   r = setup_signal_handlers(event);
-  if (r != 0) goto ret;
+  if (r != 0) goto fail;
 
   r = sd_bus_open_user(&user_bus);
   if (r < 0) {
@@ -529,7 +464,7 @@ int main(int argc, char** argv) {
       SD_ERR "failed to connect to user bus: %s\n",
       strerror(-r)
     );
-    goto ret;
+    goto fail;
   }
 
   r = sd_bus_open_system(&system_bus);
@@ -539,20 +474,50 @@ int main(int argc, char** argv) {
       SD_ERR "failed to connect to system bus: %s\n",
       strerror(-r)
     );
-    goto ret;
+    goto fail;
   }
 
-  ctx = bus_context_create(system_bus);
-  if (ctx == nullptr) goto ret;
-
-  r = setup_screensaver_service(user_bus, ctx);
-  if (r < 0) goto ret;
-
   r = sd_bus_attach_event(system_bus, event, SD_EVENT_PRIORITY_NORMAL);
-  if (r < 0) goto ret;
+  if (r < 0) goto fail;
 
   r = sd_bus_attach_event(user_bus, event, SD_EVENT_PRIORITY_NORMAL);
-  if (r < 0) goto ret;
+  if (r < 0) goto fail;
+
+  ctx = bus_context_create(system_bus);
+  if (ctx == nullptr) goto fail;
+
+  r = sd_bus_match_signal(
+    user_bus,
+    nullptr,
+    "org.freedesktop.DBus",
+    "/org/freedesktop/DBus",
+    "org.freedesktop.DBus",
+    "NameOwnerChanged",
+    bus_on_name_owner_changed,
+    ctx
+  );
+  if (r < 0) goto fail;
+
+  r = sd_bus_add_object_vtable(
+    user_bus,
+    nullptr,
+    "/org/freedesktop/ScreenSaver",
+    "org.freedesktop.ScreenSaver",
+    bus_vtable_screensaver,
+    ctx
+  );
+  if (r < 0) goto fail;
+
+  r = sd_bus_request_name(user_bus, "org.freedesktop.ScreenSaver", 0);
+  if (r < 0) {
+    fprintf(
+      stderr,
+      SD_ERR "failed to acquire name %s: %s\n",
+      "org.freedesktop.ScreenSaver",
+      strerror(-r)
+    );
+    goto fail;
+  }
 
   r = sd_event_loop(event);
   if (r < 0) {
@@ -561,11 +526,12 @@ int main(int argc, char** argv) {
       SD_ERR "sd_event_loop failed: %s\n",
       strerror(-r)
     );
-    goto ret;
+    goto fail;
   }
 
-  ret = EXIT_SUCCESS;
+exit:
+  return EXIT_SUCCESS;
 
-ret:
-  return ret;
+fail:
+  return EXIT_FAILURE;
 }
