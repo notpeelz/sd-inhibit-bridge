@@ -139,7 +139,18 @@ static void bus_context_destroy(bus_context_t* ctx) {
 }
 SDIB_DEFINE_POINTER_CLEANUP_FUNC(bus_context_t, bus_context_destroy);
 
-static int bus_context_get_peer(
+static bool bus_context_get_peer(
+  bus_context_t* ctx,
+  char const* name,
+  peer_t** peer
+) {
+  assert(ctx != nullptr);
+  assert(name != nullptr);
+
+  return htable_get(ctx->peers, name, (void**)peer);
+}
+
+static int bus_context_get_or_create_peer(
   bus_context_t* ctx,
   char const* name,
   peer_t** peer
@@ -238,7 +249,7 @@ static int method_inhibit(
   if (r < 0) return r;
 
   peer_t* peer;
-  r = bus_context_get_peer(ctx, sender, &peer);
+  r = bus_context_get_or_create_peer(ctx, sender, &peer);
   if (r < 0) return r;
 
   uint32_t id;
@@ -291,19 +302,12 @@ static int method_uninhibit(
   if (r < 0) return r;
 
   peer_t* peer;
-  r = bus_context_get_peer(ctx, sender, &peer);
-  if (r < 0) return r;
+  if (!bus_context_get_peer(ctx, sender, &peer)) {
+    goto invalid;
+  }
 
   if (!inhibitman_remove(peer->im, id)) {
-    fprintf(
-      stderr,
-      SD_ERR "uninhibit: invalid cookie\n"
-      SD_ERR "  peer=%s\n"
-      SD_ERR "  cookie=%u\n",
-      sender,
-      id
-    );
-    return sd_bus_reply_method_errnof(m, EINVAL, "invalid cookie");
+    goto invalid;
   }
 
   fprintf(
@@ -316,6 +320,17 @@ static int method_uninhibit(
   );
 
   return sd_bus_reply_method_return(m, "");
+
+invalid:
+  fprintf(
+    stderr,
+    SD_ERR "uninhibit: invalid cookie\n"
+    SD_ERR "  peer=%s\n"
+    SD_ERR "  cookie=%u\n",
+    sender,
+    id
+  );
+  return sd_bus_reply_method_errnof(m, EINVAL, "invalid cookie");
 }
 
 static sd_bus_vtable const screensaver_vtable[] = {
