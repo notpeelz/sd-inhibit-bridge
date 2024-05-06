@@ -187,7 +187,7 @@ static bool bus_context_remove_peer(
       fprintf(
         stderr,
         SD_DEBUG "cleaning up lingering inhibitors\n"
-        SD_DEBUG "  peer=%s\n",
+        SD_DEBUG "  name=%s\n",
         name
       );
     }
@@ -258,7 +258,7 @@ static int method_inhibit(
     fprintf(
       stderr,
       SD_ERR "inhibit: %s\n"
-      SD_ERR "  peer=%s\n"
+      SD_ERR "  name=%s\n"
       SD_ERR "  app_name=%s\n"
       SD_ERR "  reason=%s\n",
       strerror(-r),
@@ -272,7 +272,7 @@ static int method_inhibit(
   fprintf(
     stderr,
     SD_DEBUG "inhibit\n"
-    SD_DEBUG "  peer=%s\n"
+    SD_DEBUG "  name=%s\n"
     SD_DEBUG "  app_name=%s\n"
     SD_DEBUG "  reason=%s\n"
     SD_DEBUG "  cookie=%u\n",
@@ -378,13 +378,12 @@ static int on_name_owner_changed(
   r = sd_bus_message_read_basic(m, 's', &new_owner);
   if (r < 0) return r;
 
+  if (!bus_context_get_peer(ctx, name, nullptr)) {
+    return 0;
+  }
+
   if (strcmp(name, old_owner) == 0 && strcmp(new_owner, "") == 0) {
-    // fprintf(
-    //   stderr,
-    //   SD_DEBUG "name disappeared from bus\n"
-    //   SD_DEBUG "  name=%s\n",
-    //   name
-    // );
+    // The peer disappeared from the bus
     (void)bus_context_remove_peer(ctx, name);
   }
 
