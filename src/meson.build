@@ -21,7 +21,7 @@ executable(
     include_directories('.'),
   ],
   link_args: [
-    '-Wl,--version-script', meson.current_source_dir() / 'version.map',
+    '-Wl,--version-script=@0@'.format(meson.current_source_dir() / 'version.map'),
   ],
 )
 
