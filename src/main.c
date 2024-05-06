@@ -10,7 +10,6 @@
 
 #include "inhibitman.h"
 #include "htable.h"
-#include "config.h"
 
 typedef struct peer {
   char const* name;
