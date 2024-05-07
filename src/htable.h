@@ -26,7 +26,7 @@ htable_t* htable_create(
   htable_callbacks_t* callbacks
 );
 void htable_destroy(htable_t* ht);
-SDIB_DEFINE_POINTER_CLEANUP_FUNC(htable_t, htable_destroy);
+DEFINE_POINTER_CLEANUP_FUNC(htable_t, htable_destroy);
 
 void htable_insert(htable_t* ht, void* k, void* v);
 bool htable_remove(htable_t* ht, void const* k, void** v);
@@ -35,6 +35,6 @@ bool htable_get(htable_t* ht, void const* k, void** v);
 htable_enum_t* htable_enum_create(htable_t* ht);
 bool htable_enum_next(htable_enum_t* he, void const** k, void** v);
 void htable_enum_destroy(htable_enum_t* he);
-SDIB_DEFINE_POINTER_CLEANUP_FUNC(htable_enum_t, htable_enum_destroy);
+DEFINE_POINTER_CLEANUP_FUNC(htable_enum_t, htable_enum_destroy);
 
 #endif

@@ -57,7 +57,7 @@ static void peer_destroy(peer_t* peer) {
   free((void*)peer->name);
   free(peer);
 }
-SDIB_DEFINE_POINTER_CLEANUP_FUNC(peer_t, peer_destroy);
+DEFINE_POINTER_CLEANUP_FUNC(peer_t, peer_destroy);
 
 typedef struct bus_context {
   htable_t* peers;
@@ -136,7 +136,7 @@ static void bus_context_destroy(bus_context_t* ctx) {
   sd_bus_unrefp(&ctx->system_bus);
   free(ctx);
 }
-SDIB_DEFINE_POINTER_CLEANUP_FUNC(bus_context_t, bus_context_destroy);
+DEFINE_POINTER_CLEANUP_FUNC(bus_context_t, bus_context_destroy);
 
 static bool bus_context_get_peer(
   bus_context_t* ctx,
@@ -410,16 +410,16 @@ int main(int argc, char** argv) {
 
   int r;
 
-  _sdib_cleanup_(sd_bus_flush_close_unrefp)
+  _cleanup_(sd_bus_flush_close_unrefp)
   sd_bus* user_bus = nullptr;
 
-  _sdib_cleanup_(sd_bus_flush_close_unrefp)
+  _cleanup_(sd_bus_flush_close_unrefp)
   sd_bus* system_bus = nullptr;
 
-  _sdib_cleanup_(bus_context_destroyp)
+  _cleanup_(bus_context_destroyp)
   bus_context_t* ctx = nullptr;
 
-  _sdib_cleanup_(sd_event_unrefp)
+  _cleanup_(sd_event_unrefp)
   sd_event* event = nullptr;
 
   optind = 1;

@@ -20,9 +20,9 @@ add_project_arguments([
   '-Wno-error=unused-label',
   '-Wno-error=unused-const-variable',
   '-Wno-error=unused-result',
-  '-include', meson.source_root() / 'extensions.h',
   # HACK: stop vscode's intellisense from complaining about missing c2x features
   '-include', meson.source_root() / 'c2xcompat.h',
+  '-include', meson.source_root() / 'extensions.h',
 ], language: 'c')
 
 DEP_SYSTEMD = dependency(

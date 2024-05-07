@@ -60,7 +60,7 @@ static void inhibitor_arr_destroy(inhibitor_arr_t* arr) {
   free(arr->items);
   free(arr);
 }
-SDIB_DEFINE_POINTER_CLEANUP_FUNC(inhibitor_arr_t, inhibitor_arr_destroy);
+DEFINE_POINTER_CLEANUP_FUNC(inhibitor_arr_t, inhibitor_arr_destroy);
 
 static int inhibitor_arr_add(
   inhibitor_arr_t* arr,
@@ -179,7 +179,7 @@ int inhibitman_add(
   int r;
   int err;
 
-  _sdib_cleanup_(sd_bus_message_unrefp)
+  _cleanup_(sd_bus_message_unrefp)
   sd_bus_message* reply = nullptr;
 
   r = sd_bus_call_method(
