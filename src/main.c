@@ -11,16 +11,16 @@
 #include "inhibitman.h"
 #include "htable.h"
 
-typedef struct peer {
+typedef struct bus_peer {
   char const* name;
   inhibitman_t* im;
-} peer_t;
+} bus_peer_t;
 
-static peer_t* peer_create(char const* name, sd_bus* system_bus) {
+static bus_peer_t* bus_peer_create(char const* name, sd_bus* system_bus) {
   assert(name != nullptr);
   assert(system_bus != nullptr);
 
-  peer_t* peer = nullptr;
+  bus_peer_t* peer = nullptr;
   inhibitman_t* im = nullptr;
   char* peer_name = nullptr;
 
@@ -45,7 +45,7 @@ fail:
   return nullptr;
 }
 
-static void peer_destroy(peer_t* peer) {
+static void bus_peer_destroy(bus_peer_t* peer) {
   if (peer == nullptr) return;
   fprintf(
     stderr,
@@ -57,7 +57,7 @@ static void peer_destroy(peer_t* peer) {
   free((void*)peer->name);
   free(peer);
 }
-DEFINE_POINTER_CLEANUP_FUNC(peer_t, peer_destroy);
+DEFINE_POINTER_CLEANUP_FUNC(bus_peer_t, bus_peer_destroy);
 
 typedef struct bus_context {
   htable_t* peers;
@@ -91,8 +91,8 @@ static void* peers_htable_vcopy(void* in) {
 }
 
 static void peers_htable_vfree(void* in) {
-  auto peer = (peer_t*)in;
-  peer_destroyp(&peer);
+  auto peer = (bus_peer_t*)in;
+  bus_peer_destroyp(&peer);
 }
 
 static htable_callbacks_t peers_htable_callbacks = {
@@ -141,7 +141,7 @@ DEFINE_POINTER_CLEANUP_FUNC(bus_context_t, bus_context_destroy);
 static bool bus_context_get_peer(
   bus_context_t* ctx,
   char const* name,
-  peer_t** peer
+  bus_peer_t** peer
 ) {
   assert(ctx != nullptr);
   assert(name != nullptr);
@@ -152,23 +152,20 @@ static bool bus_context_get_peer(
 static int bus_context_get_or_create_peer(
   bus_context_t* ctx,
   char const* name,
-  peer_t** peer
+  bus_peer_t** peer
 ) {
   assert(ctx != nullptr);
   assert(name != nullptr);
   assert(peer != nullptr);
 
   if (!htable_get(ctx->peers, name, (void**)peer)) {
-    *peer = peer_create(name, ctx->system_bus);
+    *peer = bus_peer_create(name, ctx->system_bus);
     if (*peer == nullptr) {
       return -ENOMEM;
     }
 
     htable_insert(ctx->peers, (void*)name, *peer);
   }
-
-  assert((*peer)->im != nullptr);
-  assert((*peer)->name != nullptr);
 
   return 0;
 }
@@ -180,7 +177,7 @@ static bool bus_context_remove_peer(
   assert(ctx != nullptr);
   assert(name != nullptr);
 
-  peer_t* peer;
+  bus_peer_t* peer;
   if (htable_remove(ctx->peers, name, (void**)&peer)) {
     if (inhibitman_active(peer->im)) {
       fprintf(
@@ -190,7 +187,7 @@ static bool bus_context_remove_peer(
         name
       );
     }
-    peer_destroyp(&peer);
+    bus_peer_destroyp(&peer);
     return true;
   }
 
@@ -247,7 +244,7 @@ static int method_inhibit(
   r = sd_bus_message_read_basic(m, 's', &reason);
   if (r < 0) return r;
 
-  peer_t* peer;
+  bus_peer_t* peer;
   r = bus_context_get_or_create_peer(ctx, sender, &peer);
   if (r < 0) return r;
 
@@ -300,7 +297,7 @@ static int method_uninhibit(
   r = sd_bus_message_read_basic(m, 'u', &id);
   if (r < 0) return r;
 
-  peer_t* peer;
+  bus_peer_t* peer;
   if (!bus_context_get_peer(ctx, sender, &peer)) {
     goto invalid;
   }
